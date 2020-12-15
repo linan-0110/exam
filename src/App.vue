@@ -8,12 +8,14 @@
                 tooltip-effect="dark"
                 style="width: 100%"
 				row-key="id"
+                @select="select"
+                @select-all="selectAll"
                 @selection-change="handleSelectionChange"
             >
                 <el-table-column type="selection" :reserve-selection="true" width="55"> </el-table-column>
                 <el-table-column
                     prop="name"
-                    label="姓名"
+                    label="企业名称"
                     width="220"
                 ></el-table-column>
                 <el-table-column
@@ -39,10 +41,10 @@
                 ></el-table-column>
                 <el-table-column fixed="right" label="操作" width="120">
                     <template v-slot="scope">
-						<span v-if="scope.row.investment <= 0" style="color: #C8C1BC">已添加</span>
+						<span v-if="scope.row.investment <= 0" style="color: #C8C1BC; cursor: pointer;">已添加</span>
                         <span
 							v-else
-							style="color: #803525;font-weight: 600"
+							style="color: #803525;font-weight: 600;cursor: pointer;"
                             @click="add(scope.row)"
                         >
                             添加
@@ -50,33 +52,42 @@
                     </template>
                 </el-table-column>
             </el-table>
-            <div class="pagination">
-				<el-pagination style="margin: 15px" background layout="prev, pager, next" @current-change="pageChange" :page-size="pageSize" :page-count="pageCount"></el-pagination>
-			</div>
+            <el-pagination class="pagination" background layout="prev, pager, next" @current-change="pageChange" :page-size="pageSize" :page-count="pageCount"></el-pagination>
         </article>
 
         <article class="right">
-			<div class="title">待提交({{ totalTable2 }})</div>
-			<el-button style="margin-bottom: 10px" type="warning" plain @click="delBatch">批量删除</el-button>
-			<el-button style="margin-bottom: 10px" type="warning" plain @click="delAll">清空</el-button>
+			<div class="title">待提交列表({{ data2.length }})</div>
+			<div class="buttonGroup">
+                <span>
+                    <el-button style="margin-bottom: 10px" type="warning" plain @click="delBatch">批量删除</el-button>
+			        <el-button style="margin-bottom: 10px" type="warning" plain @click="delAll">清空</el-button>
+                </span>
+			    <el-button style="margin-bottom: 10px" type="danger" plain @click="submit">提交</el-button>
+                
+            </div>
 			<el-table
-                ref="multipleTable"
+                ref="multipleTable2"
                 :data="tableData2 "
                 tooltip-effect="dark"
 				row-key="id"
                 style="width: 100%"
                 @selection-change="handleSelectionChange2"
             >
-                <el-table-column type="selection" :reserve-selection="true" width="55"> </el-table-column>
+                <el-table-column type="selection" :reserve-selection="true" width="100%"> </el-table-column>
                 <el-table-column
                     prop="name"
-                    label="姓名"
+                    label="企业名称"
                     width="220"
-                ></el-table-column>
+                >
+                    <template v-slot="scope">
+                        <div style="display:flex; justify-content: space-between;align-items: center;width: 100%">
+                            <span>{{scope.row.name}}</span>
+                            <i class="el-icon-close" @click="close(scope.row)"></i>
+                        </div>
+                    </template>
+                </el-table-column>
             </el-table>
-            <div class="pagination">
-				<el-pagination style="margin: 15px" background layout="prev, pager, next" @current-change="pageChange2" :page-size="pageSize2" :page-count="pageCount2"></el-pagination>
-			</div>
+            <el-pagination class="pagination" background layout="prev, pager, next" @current-change="pageChange2" :page-size="pageSize2" :page-count="pageCount2"></el-pagination>
 		</article>
     </div>
 </template>
@@ -94,7 +105,6 @@ export default {
 			page: 1,
 			tableData: [],
 			multipleSelection: [],
-			lastMultipleSelection: [],
 
 			data2: data2,
 			pageCount2: Math.ceil(data2.length/pageSize2),
@@ -116,6 +126,36 @@ export default {
 		this.tableData2.push(...this.data2.slice((this.page2 - 1)*pageSize2, this.page2*pageSize2))
 	},
     methods: {
+        toggleSelection(rows) {
+            if (rows) {
+            rows.forEach(row => {
+                this.$refs.multipleTable.toggleRowSelection(row);
+            });
+            } else {
+                this.$refs.multipleTable.clearSelection();
+            }
+        },
+        select(selection, row) {
+            if(row.investment <= 0) {
+                this.toggleSelection([row])
+                this.$message.warning("已添加")
+            }
+        },
+        selectAll(selection) {
+            // 添加过的
+            let tempArrAdded = selection.filter((item) => {
+                return item.investment <= 0
+            } )
+            // 没添加过的
+            let tempArrNoAdd = selection.filter((item) => {
+                return item.investment > 0
+            } )
+            this.toggleSelection(tempArrAdded)
+			if(tempArrNoAdd.length == 0) {
+				this.$message.warning('当前页没有选中可添加的项！');
+				return
+			}
+        },
         handleSelectionChange(val) {
             this.multipleSelection = val
 		},
@@ -125,33 +165,29 @@ export default {
 			this.tableData.push(...this.data.slice((p - 1)*pageSize, p*pageSize))
 		},
 		addBatch() {
-			if(this.multipleSelection.length == 0) {
+            let addArr = this.multipleSelection.filter((item) => {
+                if(item.investment <= 0) {
+                    this.toggleSelection([item])
+                }
+                return item.investment > 0
+            } )
+			if(addArr.length == 0) {
 				this.$message.warning('请选择要添加的项！');
 				return
 			}
 			this.$confirm("确认添加所选项？").then(() => {
-				console.log('确认')
-				// 从新计算 tableData2
-				let differenceSet = subSet(this.multipleSelection, this.lastMultipleSelection)
-				this.tableData2 = this.data
-				this.data2.push(...differenceSet)
-				console.log(this.tableData2.length)
-				console.log(pageSize2)
+                // 从新计算 tableData2
+                this.data2.push(...addArr)
 				if(this.tableData2.length < pageSize2) {
-					console.log(this.data2.slice((this.page2 - 1)*pageSize2, this.page2*pageSize2))
+                    this.tableData2 = []
 					this.tableData2.push(...this.data2.slice((this.page2 - 1)*pageSize2, this.page2*pageSize2))
 				}
 				this.pageCount2 = Math.ceil(this.data2.length/pageSize2)
-				// 保留之前提交过的数据
-				this.lastMultipleSelection.push(...differenceSet)
-				// 移动之后 删除原来数组
-				differenceSet.forEach(item => {
+				// 移动之后 
+				addArr.forEach(item => {
 					item.investment = 0
-					// console.log()
-					// let findIndex = this.data.findIndex(({id}) => item.id == id)
-					// this.data.splice(findIndex,1)
-				})
-				// 从新计算 tableData
+                })
+                this.toggleSelection()
 				// 从新计算 页数
 				this.pageCount = Math.ceil(this.data.length/pageSize)
 				
@@ -160,11 +196,24 @@ export default {
 		add(val) {
 			this.$confirm("确认添加？").then(() => {
 				this.data2.push(val)
-				this.tableData2.push(...this.data2.slice((this.page2 - 1)*pageSize2, this.page2*pageSize2))
-				this.pageCount2 = Math.ceil(this.data2.length/pageSize2)
+				if(this.tableData2.length < pageSize2) {
+                    this.tableData2 = []
+					this.tableData2.push(...this.data2.slice((this.page2 - 1)*pageSize2, this.page2*pageSize2))
+				}
+                this.pageCount2 = Math.ceil(this.data2.length/pageSize2)
+                val.investment = 0
 			}).catch(() => {console.log('取消')})
 		},
 
+        toggleSelection2(rows) {
+            if (rows) {
+            rows.forEach(row => {
+                this.$refs.multipleTable2.toggleRowSelection(row);
+            });
+            } else {
+            this.$refs.multipleTable2.clearSelection();
+            }
+        },
 		handleSelectionChange2(val) {
             this.multipleSelection2 = val
 		},
@@ -177,10 +226,30 @@ export default {
 			if(this.multipleSelection2.length == 0) {
 				this.$message.warning('请选择要移除的项！');
 				return
-			}
+            }
 			this.$confirm("确认删除所选项？").then(() => {
-				console.log('确认')
-			}).catch(() => {console.log('取消')})
+                console.log('确认')
+                // 计算差集
+                let temp = this.multipleSelection2.map(item => item.id)
+                for(var i = this.data2.length - 1; i>=0; i--) {
+                    if(temp.includes(this.data2[i].id)) {
+                        this.data2.splice(i, 1)
+                    }
+                }
+
+                // 从新计算 tableData2
+                this.tableData2 = []
+                this.tableData2.push(...this.data2.slice((this.page2 - 1)*pageSize2, this.page2*pageSize2))
+                
+                this.multipleSelection2 = []
+                this.toggleSelection2()
+            }).catch((e) => {
+                console.log(e)
+                this.multipleSelection2 = []
+                this.toggleSelection2()
+            })
+            // 清楚选项
+            
 		},
 		delAll() {
 			if(this.data2.length == 0) {
@@ -192,20 +261,25 @@ export default {
 				this.tableData2 = []
 				this.pageCount2 = 1
 			}).catch(() => {console.log('取消')})
-		},
+        },
+        close(row) {
+            console.log()
+            let index = this.data2.findIndex(item => item.id == row.id)
+            this.data2.splice(index, 1)
+            // 从新计算 tableData2
+            this.tableData2 = []
+            this.tableData2.push(...this.data2.slice((this.page2 - 1)*pageSize2, this.page2*pageSize2))
+        },
+        submit() {
+            console.log('提交')
+            console.log(this.data2)
+            this.$confirm(JSON.stringify(this.data2)).then(
+                this.$message.success('提交成功！')
+            ).catch()
+        }
     },
 };
-// 求数组差集
-function subSet (arr1, arr2) {
-        var set2 = new Set(arr2);
-        var subset = [];
-        arr1.forEach(function(val, index) {
-            if (!set2.has(val)) {
-                subset.push(val);
-            }
-        });
-        return subset;
-};
+// 数组交集
 let data2 = []
 // let data2 = [{
 // 					id: 1000,
@@ -408,7 +482,7 @@ let data =  [{
                 },
                 {
 					id: 8,
-                    name: "**市****科技有限公司",
+                    name: "**市****技有限公司",
                     synthesisExponent: 32.88,
                     innovateExponent: 16.36,
                     income: 8054.4,
@@ -417,7 +491,7 @@ let data =  [{
                 },
                 {
 					id: 9,
-                    name: "**市****科技有限公司",
+                    name: "**市****股份有限公司",
                     synthesisExponent: 32.88,
                     innovateExponent: 16.36,
                     income: 8054.4,
@@ -426,7 +500,7 @@ let data =  [{
                 },
                 {
 					id: 10,
-                    name: "**市****科技有限公司",
+                    name: "**市****份有限公司",
                     synthesisExponent: 32.88,
                     innovateExponent: 16.36,
                     income: 8054.4,
@@ -435,7 +509,7 @@ let data =  [{
                 },
                 {
 					id: 11,
-                    name: "**市****科技有限公司",
+                    name: "**市****技有限公司",
                     synthesisExponent: 32.88,
                     innovateExponent: 16.36,
                     income: 8054.4,
@@ -453,7 +527,7 @@ let data =  [{
                 },
                 {
 					id: 13,
-                    name: "**市****科技有限公司",
+                    name: "**省****科**限公司",
                     synthesisExponent: 32.88,
                     innovateExponent: 16.36,
                     income: 8054.4,
@@ -471,7 +545,7 @@ let data =  [{
                 },
                 {
 					id: 15,
-                    name: "**市****科技有限公司",
+                    name: "**省市****科技有限公司",
                     synthesisExponent: 32.88,
                     innovateExponent: 16.36,
                     income: 8054.4,
@@ -480,7 +554,7 @@ let data =  [{
                 },
                 {
 					id: 16,
-                    name: "**市****科技有限公司",
+                    name: "**省****科技有限公司",
                     synthesisExponent: 32.88,
                     innovateExponent: 16.36,
                     income: 8054.4,
@@ -507,7 +581,7 @@ let data =  [{
                 },
                 {
 					id: 19,
-                    name: "**市****科技有限公司",
+                    name: "**市****公司",
                     synthesisExponent: 32.88,
                     innovateExponent: 16.36,
                     income: 8054.4,
@@ -525,7 +599,7 @@ let data =  [{
                 },
                 {
 					id: 21,
-                    name: "**市****科技有限公司",
+                    name: "**市****限公司",
                     synthesisExponent: 32.88,
                     innovateExponent: 16.36,
                     income: 8054.4,
@@ -539,28 +613,53 @@ let data =  [{
 #app {
     display: flex;
     padding: 30px 15px;
+    height: 60%;
+    width: 100%;
+    min-height: 600px;
+    box-sizing: border-box;
     .left {
-        border: 1px solid #f6f3ec;
+        flex-grow: 1;
+        height: 100%;
+        position: relative;
+        border: 1px solid #ccc9c9;
         border-radius: 5px;
         background-color: #f7fcf8;
         padding: 10px;
-        flex-grow: 1;
 		margin-right: 10px;
 		.pagination{
-			display: flex;
-			justify-content: flex-end;
+			position: absolute;
+            right: 15px;
+            bottom: 10px;
 		}
     }
     .right {
-        border: 1px solid #f6f3ec;
+        height: 100%;
+        // width: 350px;
+        flex-basis: 350px;
+        position: relative;
+        border: 1px solid #ccc9c9;
         border-radius: 5px;
         padding: 10px;
         background-color: #fcfaf7;
-		width: 350px;
+        .buttonGroup{
+            display: flex;
+            justify-content: space-between;
+        }
 		.title{
 			color: #803424;
 			margin: 10px 0;
+        }
+        .pagination{
+			position: absolute;
+            right: 15px;
+            bottom: 10px;
 		}
     }
 }
+
+.el-icon-close:hover{
+    background-color: rgb(202, 198, 198);
+    border-radius: 50%;
+}
 </style>
+
