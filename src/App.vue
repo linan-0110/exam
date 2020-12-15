@@ -189,7 +189,8 @@ export default {
                 })
                 this.toggleSelection()
 				// 从新计算 页数
-				this.pageCount = Math.ceil(this.data.length/pageSize)
+                this.pageCount = Math.ceil(this.data.length/pageSize)
+                this.$message.success("添加成功！")
 				
 			}).catch(() => {console.log('取消')})
 		},
@@ -202,6 +203,7 @@ export default {
 				}
                 this.pageCount2 = Math.ceil(this.data2.length/pageSize2)
                 val.investment = 0
+                this.$message.success("添加成功！")
 			}).catch(() => {console.log('取消')})
 		},
 
@@ -243,6 +245,7 @@ export default {
                 
                 this.multipleSelection2 = []
                 this.toggleSelection2()
+                this.$message.success("批量移除成功！")
             }).catch((e) => {
                 console.log(e)
                 this.multipleSelection2 = []
@@ -259,7 +262,8 @@ export default {
 			this.$confirm("确认清空有列表？").then(() => {
 				this.data2 = []
 				this.tableData2 = []
-				this.pageCount2 = 1
+                this.pageCount2 = 1
+                this.$message.success("移除成功！")
 			}).catch(() => {console.log('取消')})
         },
         close(row) {
