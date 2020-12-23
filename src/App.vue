@@ -7,7 +7,7 @@
                 ref="multipleTable"
                 :data="tableData"
                 tooltip-effect="dark"
-                style="width: 100%"
+                
 				row-key="id"
                 @select="select"
                 @select-all="selectAll"
@@ -642,6 +642,8 @@ let data =  [{
     box-sizing: border-box;
     .left {
         flex-grow: 1;
+        width: 60%;
+        min-width: 800px;
         height: 100%;
         position: relative;
         border: 1px solid #ccc9c9;
@@ -649,16 +651,10 @@ let data =  [{
         background-color: #f7fcf8;
         padding: 10px;
 		margin-right: 10px;
-		.pagination{
-			position: absolute;
-            right: 15px;
-            bottom: 10px;
-		}
     }
     .right {
         height: 100%;
-        // width: 350px;
-        flex-basis: 350px;
+        width: 320px;
         position: relative;
         border: 1px solid #ccc9c9;
         border-radius: 5px;
@@ -672,12 +668,14 @@ let data =  [{
 			color: #803424;
 			margin: 10px 0;
         }
-        .pagination{
-			position: absolute;
-            right: 15px;
-            bottom: 10px;
-		}
+        
     }
+}
+
+.pagination{
+    position: absolute;
+    right: 15px;
+    bottom: 10px;
 }
 
 .el-icon-close:hover{
