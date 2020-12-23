@@ -7,6 +7,7 @@ Vue.config.productionTip = false
 Vue.prototype.$confirm = MessageBox.confirm;
 Vue.prototype.$message = Message;
 Vue.use(Button).use(Table).use(TableColumn).use(Radio).use(Pagination).use(Icon)
+import './theme/index.css'
 new Vue({
   render: h => h(App),
 }).$mount('#app')

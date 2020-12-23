@@ -1,8 +1,9 @@
 <template>
     <div id="app">
         <article class="left">
-			<el-button style="margin-bottom: 10px" type="warning" plain @click="addBatch">批量添加</el-button>
+			<el-button style="margin-bottom: 10px" type="primary" plain @click="addBatch">批量添加</el-button>
             <el-table
+                :header-cell-style="{backgroundColor: '#E8DED8'}"
                 ref="multipleTable"
                 :data="tableData"
                 tooltip-effect="dark"
@@ -59,13 +60,14 @@
 			<div class="title">待提交列表({{ data2.length }})</div>
 			<div class="buttonGroup">
                 <span>
-                    <el-button style="margin-bottom: 10px" type="warning" plain @click="delBatch">批量删除</el-button>
-			        <el-button style="margin-bottom: 10px" type="warning" plain @click="delAll">清空</el-button>
+                    <el-button style="margin-bottom: 10px" type="primary" plain @click="delBatch">批量删除</el-button>
+			        <el-button style="margin-bottom: 10px" type="primary" plain @click="delAll">清空</el-button>
                 </span>
-			    <el-button style="margin-bottom: 10px" type="danger" plain @click="submit">提交</el-button>
+			    <el-button style="margin-bottom: 10px" type="primary" @click="submit">提交</el-button>
                 
             </div>
 			<el-table
+                :header-cell-style="{backgroundColor: '#E8DED8'}"
                 ref="multipleTable2"
                 :data="tableData2 "
                 tooltip-effect="dark"
@@ -87,7 +89,7 @@
                     </template>
                 </el-table-column>
             </el-table>
-            <el-pagination class="pagination" background layout="prev, pager, next" @current-change="pageChange2" :page-size="pageSize2" :page-count="pageCount2"></el-pagination>
+            <el-pagination class="pagination" background layout="prev, pager, next" @current-change="pageChange2" :page-size="pageSize2" :page-count="pageCount2" ref="pagination"></el-pagination>
 		</article>
     </div>
 </template>
@@ -238,12 +240,20 @@ export default {
                         this.data2.splice(i, 1)
                     }
                 }
-
+                this.pageCount2 = Math.ceil(this.data2.length/pageSize2)
                 // 从新计算 tableData2
                 this.tableData2 = []
                 this.tableData2.push(...this.data2.slice((this.page2 - 1)*pageSize2, this.page2*pageSize2))
-                
                 this.multipleSelection2 = []
+                if(this.tableData2.length <= 0) {
+                    this.page2 -= 1
+                    this.pageCount2 -= 1
+                    this.$refs.pagination.internalCurrentPage = this.page2
+                    console.log('555')
+                    // 从新计算 tableData2
+                    this.tableData2 = []
+                    this.tableData2.push(...this.data2.slice((this.page2 - 1)*pageSize2, this.page2*pageSize2))
+                }
                 this.toggleSelection2()
                 this.$message.success("批量移除成功！")
             }).catch((e) => {
@@ -273,6 +283,15 @@ export default {
             // 从新计算 tableData2
             this.tableData2 = []
             this.tableData2.push(...this.data2.slice((this.page2 - 1)*pageSize2, this.page2*pageSize2))
+            this.pageCount2 = Math.ceil(this.data2.length/pageSize2)
+            if(this.tableData2.length <= 0) {
+                this.page2 -= 1
+                this.pageCount2 -= 1
+                this.$refs.pagination.internalCurrentPage = this.page2
+                // 从新计算 tableData2
+                this.tableData2 = []
+                this.tableData2.push(...this.data2.slice((this.page2 - 1)*pageSize2, this.page2*pageSize2))
+            }
         },
         submit() {
             console.log('提交')
