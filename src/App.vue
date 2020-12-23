@@ -197,7 +197,7 @@ export default {
 			}).catch(() => {console.log('取消')})
 		},
 		add(val) {
-			this.$confirm("确认添加？").then(() => {
+			// this.$confirm("确认添加？").then(() => {
 				this.data2.push(val)
 				if(this.tableData2.length < pageSize2) {
                     this.tableData2 = []
@@ -206,7 +206,7 @@ export default {
                 this.pageCount2 = Math.ceil(this.data2.length/pageSize2)
                 val.investment = 0
                 this.$message.success("添加成功！")
-			}).catch(() => {console.log('取消')})
+			// }).catch(() => {console.log('取消')})
 		},
 
         toggleSelection2(rows) {
